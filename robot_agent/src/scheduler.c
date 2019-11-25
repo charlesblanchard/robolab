@@ -89,14 +89,11 @@ void scheduler_wait_for_timer(scheduler_t *ces)
 	timelib_timer_add_ms(&ces->tv_cycle, ces->minor);
 
 	// Check for overrun and execute sleep only if there is no
+	//printf("sleeptime %i\n",sleep_time);
 	if(sleep_time > 0)
 	{
 		// Go to sleep (multipy with 1000 to get miliseconds)
 		usleep(sleep_time);
-	}
-	else
-	{
-		counter++;
 	}
 }
 
@@ -152,6 +149,8 @@ void scheduler_exec_task(scheduler_t *ces, int task_id)
 		}
 }
 
+//#define LENGTH_MONITORING
+
 /**
  * Execute task with monitoring
  * @param ces Pointer to scheduler structure
@@ -160,13 +159,24 @@ void scheduler_exec_task(scheduler_t *ces, int task_id)
  */
 void scheduler_run_task(scheduler_t *ces, int task_id, struct timeval *timer)
 {
+	#ifdef LENGTH_MONITORING
 	double before,after;
 	
 	before = timelib_timer_get(ces->tv_started);
 	scheduler_exec_task(ces, task_id);
 	after = timelib_timer_get(ces->tv_started);
 	
-	//printf("%i %f\n",task_id, after-before);
+	if(task_id==s_TASK_REFINE_ID)
+		printf("REFINE %i %f\n",task_id, after-before);
+	
+	//if(task_id==s_TASK_AVOID_ID)
+	//	printf("AVOID %i %f\n",task_id, after-before);
+		
+	#else
+	
+	scheduler_exec_task(ces, task_id);
+	
+	#endif
 	
 	if(timelib_timer_get(*timer) > ces->minor )
 	{
@@ -182,154 +192,32 @@ void scheduler_run_task(scheduler_t *ces, int task_id, struct timeval *timer)
  */
 void scheduler_run(scheduler_t *ces)
 {
-	/* --- Local variables (define variables here) --- */
-	time_t t;
-	srand ((unsigned) time(&t));
-	//double before,after;
 	struct timeval minor_cycle_start;
 	
 	int nb_minor_cycle = MAJOR_CYCLE/ces->minor;
 	
+	scheduler_start(ces);
+	
 	while(1)
 	{		
 		for(int i=0; i<nb_minor_cycle; i++){
-			//printf("\nCYCLE %i\n",i);
 			timelib_timer_set(&minor_cycle_start);
 			
 			if(i==0)
 				scheduler_run_task(ces, s_TASK_COMMUNICATE_ID, &minor_cycle_start);
 			
-			scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start);
-			scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start);
+			scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start);			
 			
-			if(i%3 == 0)
+			if(i%5 == 0){
+				scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start);
 				scheduler_run_task(ces, s_TASK_CONTROL_ID, &minor_cycle_start);
-			
-			if(i%5 == 0)
-				scheduler_run_task(ces, s_TASK_REFINE_ID, &minor_cycle_start);
-			
+			}
+
+			scheduler_run_task(ces, s_TASK_REFINE_ID, &minor_cycle_start);
 			scheduler_run_task(ces, s_TASK_REPORT_ID, &minor_cycle_start);
 			scheduler_run_task(ces, s_TASK_AVOID_ID, &minor_cycle_start);
 			
-			
-			printf("\nnb overruns %u\n", counter);
+			scheduler_wait_for_timer(ces);
 		}
-		/*
-		counter=0;
-		
-		// minor cycle 1
-		scheduler_wait_for_timer(ces);
-		timelib_timer_set(&minor_cycle_start);
-		
-		scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_CONTROL_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REFINE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REPORT_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_COMMUNICATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_AVOID_ID, &minor_cycle_start );
-		
-		// minor cycle 2
-		scheduler_wait_for_timer(ces);
-		timelib_timer_set(&minor_cycle_start);
-		
-		scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REPORT_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_AVOID_ID, &minor_cycle_start );
-		
-		// minor cycle 3
-		scheduler_wait_for_timer(ces);
-		timelib_timer_set(&minor_cycle_start);
-		
-		scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_CONTROL_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REPORT_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_AVOID_ID, &minor_cycle_start );
-		
-		// minor cycle 4
-		scheduler_wait_for_timer(ces);
-		timelib_timer_set(&minor_cycle_start);
-		
-		scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REFINE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REPORT_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_AVOID_ID, &minor_cycle_start );
-		
-		// minor cycle 5
-		scheduler_wait_for_timer(ces);
-		timelib_timer_set(&minor_cycle_start);
-		
-		scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_CONTROL_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REPORT_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_AVOID_ID, &minor_cycle_start );
-		
-		
-		// minor cycle 6
-		scheduler_wait_for_timer(ces);
-		timelib_timer_set(&minor_cycle_start);
-		
-		scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REPORT_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_AVOID_ID, &minor_cycle_start );
-		
-		// minor cycle 7
-		scheduler_wait_for_timer(ces);
-		timelib_timer_set(&minor_cycle_start);
-		
-		scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_CONTROL_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REFINE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REPORT_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_AVOID_ID, &minor_cycle_start );
-		
-		// minor cycle 8
-		scheduler_wait_for_timer(ces);
-		timelib_timer_set(&minor_cycle_start);
-		
-		scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_REPORT_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_COMMUNICATE_ID, &minor_cycle_start );
-		scheduler_run_task(ces, s_TASK_AVOID_ID, &minor_cycle_start );		
-		
-		
-		*/
-		printf("\nnb overruns %u\n", counter);
 	}
-	
-	/*
-	double last_avoid = timelib_timer_get(ces->tv_started);
-	double now;
-	
-	for(int i=0; i<1000 ; i++){
-		int myRand = 1+rand()%7;
-		
-		if(myRand == 7){
-			now = timelib_timer_get(ces->tv_started);
-			
-			if( now < last_avoid + 100)
-				continue;
-			
-			last_avoid = now;
-		}
-		
-		before = timelib_timer_get(ces->tv_started);
-		
-		scheduler_exec_task(ces,myRand);
-		
-		after = timelib_timer_get(ces->tv_started);
-		
-		if(myRand == 7){
-			last_avoid = timelib_timer_get(ces->tv_started);;
-		}
-		printf("%i %f\n",myRand, after-before);
-	}*/
-	
 }
