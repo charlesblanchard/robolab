@@ -31,6 +31,11 @@ udp_t				*g_udps; // UDP sockets connection
 /* Data lists */
 doublylinkedlist_t	*g_list_send; // Queue for data to be sent away (communication)
 
+doublylinkedlist_t	*g_list_send_victim; 
+doublylinkedlist_t	*g_list_send_location; 
+doublylinkedlist_t	*g_list_send_pheromone; 
+doublylinkedlist_t	*g_list_send_stream;
+
 /* Data queues */
 queue_t				*g_queue_mission; // Queue for data to mission task (commands, victims)
 queue_t				*g_queue_navigate; // Queue for data to navigate task (pheromones)
@@ -112,6 +117,12 @@ void task_init(int enable)
 	// Init Queues
 	// for communication
 	g_list_send = doublylinkedlist_init();
+	
+	g_list_send_victim = doublylinkedlist_init();
+	g_list_send_location = doublylinkedlist_init(); 
+	g_list_send_pheromone = doublylinkedlist_init();
+	g_list_send_stream = doublylinkedlist_init();
+	
 	// for mission
 	g_queue_mission = queue_init();
 	// for navigate

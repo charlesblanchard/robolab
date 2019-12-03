@@ -14,6 +14,8 @@
 /* project libraries */
 #include "task.h"
 
+#define NB_MESSAGES_MAX 100
+
  /**
  * Communication (receive and send data)
  */
@@ -42,44 +44,151 @@ void task_communicate(void)
 		// --------------------------------------------------
 		//	LAB 2 starts here
 		// --------------------------------------------------
-
-
-		/* --- Send Data --- */
-		while(g_list_send->count != 0)
+/*
+victim					report task	
+location(latest) 		control task
+pheromone 				navigate task
+stream					mission task
+*/
+		
+		unsigned int sent = 0;
+		while(sent < NB_MESSAGES_MAX){
+			
+			
+		
+		
+		}
+		
+		
+		/* --- Send Victims --- */
+		while(g_list_send_victim->count != 0)
 		{
-			seq++;
-
-			// Allocate memory for data structure
-			switch(g_list_send->first->data_type)
+			if( sent > NB_MESSAGES_MAX )
 			{
-			// Robot pose
-			case s_DATA_STRUCT_TYPE_ROBOT :
-				data = (void *)malloc(sizeof(robot_t));
-				break;
-			// Victim information
-			case s_DATA_STRUCT_TYPE_VICTIM :
-				data = (void *)malloc(sizeof(victim_t));
-				break;
-			// Pheromone map
-			case s_DATA_STRUCT_TYPE_PHEROMONE :
-				data = (void *)malloc(sizeof(pheromone_map_sector_t));
-				break;
-			// Command (for future use)
-			case s_DATA_STRUCT_TYPE_CMD :
-				data = (void *)malloc(sizeof(command_t));
-				break;
-			case s_DATA_STRUCT_TYPE_STREAM :
-				data = (void *)malloc(sizeof(stream_t));
-				break;
-			// Other
-			default :
-				// Do nothing
-				continue;
+				// on fait quoi si on a pas tout envoyer ?
+				doublylinkedlist_empty(g_list_send_victim);
 				break;
 			}
-
+			
+			sent++;
+			seq++;
+			
+			data = (void *)malloc(sizeof(victim_t));
+			
 			// Get data from the list
-			doublylinkedlist_remove(g_list_send, g_list_send->first ,data, &data_type);
+			doublylinkedlist_remove(g_list_send_victim, g_list_send_victim->first ,data, &data_type);
+
+			// Encode data into UDP packet
+			protocol_encode(udp_packet,
+					&udp_packet_len,
+					s_PROTOCOL_ADDR_BROADCAST,
+					g_config.robot_id,
+					g_config.robot_team,
+					s_PROTOCOL_TYPE_DATA,
+					seq,
+					g_message_sequence_id,
+					last_id,
+					data_type,
+					data);
+
+			// Broadcast packet
+			udp_broadcast(g_udps, udp_packet, udp_packet_len);
+
+			// Free memory
+			free(data);
+		}
+		
+		/* --- Send Location --- */
+		while(g_list_send_location->count != 0)
+		{
+			if( sent > NB_MESSAGES_MAX )
+			{
+				break;
+			}
+			
+			sent++;
+			seq++;
+			
+			data = (void *)malloc(sizeof(victim_t));
+			
+			// Get data from the list
+			doublylinkedlist_remove(g_list_send_location, g_list_send_location->first ,data, &data_type);
+
+			// Encode data into UDP packet
+			protocol_encode(udp_packet,
+					&udp_packet_len,
+					s_PROTOCOL_ADDR_BROADCAST,
+					g_config.robot_id,
+					g_config.robot_team,
+					s_PROTOCOL_TYPE_DATA,
+					seq,
+					g_message_sequence_id,
+					last_id,
+					data_type,
+					data);
+
+			// Broadcast packet
+			udp_broadcast(g_udps, udp_packet, udp_packet_len);
+
+			// Free memory
+			free(data);
+			
+			doublylinkedlist_empty(g_list_send_location);
+		}
+		
+		/* --- Send Pheromones --- */
+		while(g_list_send_pheromone->count != 0)
+		{
+			if( sent > NB_MESSAGES_MAX )
+			{
+				doublylinkedlist_empty(g_list_send_pheromone);
+				break;
+			}
+			
+			sent++;
+			seq++;
+			
+			data = (void *)malloc(sizeof(pheromone_t));
+			
+			// Get data from the list
+			doublylinkedlist_remove(g_list_send_pheromone, g_list_send_pheromone->first ,data, &data_type);
+
+			// Encode data into UDP packet
+			protocol_encode(udp_packet,
+					&udp_packet_len,
+					s_PROTOCOL_ADDR_BROADCAST,
+					g_config.robot_id,
+					g_config.robot_team,
+					s_PROTOCOL_TYPE_DATA,
+					seq,
+					g_message_sequence_id,
+					last_id,
+					data_type,
+					data);
+
+			// Broadcast packet
+			udp_broadcast(g_udps, udp_packet, udp_packet_len);
+
+			// Free memory
+			free(data);
+		}
+		
+		/* --- Send Stream --- */
+		while(g_list_send_stream->count != 0)
+		{
+			if( sent > NB_MESSAGES_MAX )
+			{
+				doublylinkedlist_empty(g_list_send_stream);
+				break;
+			}
+			
+			sent++;
+			seq++;
+			
+			data = (void *)malloc(sizeof(stream_t));
+			
+			// Get data from the list
+			doublylinkedlist_remove(g_list_send_stream, g_list_send_stream->first ,data, &data_type);
 
 			// Encode data into UDP packet
 			protocol_encode(udp_packet,
@@ -189,7 +298,7 @@ void task_communicate(void)
 			}
 		}
 
-		// Increase msg sequance id
+		// Increase msg sequence id
 		g_message_sequence_id++;
 	}
 }
