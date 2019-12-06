@@ -197,6 +197,16 @@ void scheduler_run(scheduler_t *ces)
 	
 	int nb_minor_cycle = MAJOR_CYCLE/ces->minor;
 	
+	/* LAB 2: SERVER SYNCHRONISATION BEGIN */
+
+	unsigned int ts = (unsigned int) (timelib_unix_timestamp()*1000) ; // Get UNIX timestamp in microseconds
+
+	int sleep = 100000 - (ts % 100000);
+
+	usleep(sleep);
+
+	/* LAB 2: SERVER SYNCHRONISATION END */
+
 	scheduler_start(ces);
 	while(1)
 	{		
