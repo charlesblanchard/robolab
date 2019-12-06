@@ -173,8 +173,9 @@ void scheduler_run_task(scheduler_t *ces, int task_id, struct timeval *timer)
 	//	printf("AVOID %i %f\n",task_id, after-before);
 		
 	#else
-	
+	//printf("Task : %d\n",task_id);
 	scheduler_exec_task(ces, task_id);
+	
 	
 	#endif
 	
@@ -183,7 +184,7 @@ void scheduler_run_task(scheduler_t *ces, int task_id, struct timeval *timer)
 		overruns_counter[task_id]++;
 		printf("\noverruns %i\n",task_id);
 	}
-}
+}	
 
 /**
  * Run scheduler
@@ -197,7 +198,6 @@ void scheduler_run(scheduler_t *ces)
 	int nb_minor_cycle = MAJOR_CYCLE/ces->minor;
 	
 	scheduler_start(ces);
-	
 	while(1)
 	{		
 		for(int i=0; i<nb_minor_cycle; i++){

@@ -137,6 +137,10 @@ extern udp_t			*g_udps; // UDP sockets connection
 
 /* Data lists */
 extern doublylinkedlist_t	*g_list_send; // Queue for data to be sent away (communication)
+extern doublylinkedlist_t	*g_list_send_victim; 
+extern doublylinkedlist_t	*g_list_send_location; 
+extern doublylinkedlist_t	*g_list_send_pheromone; 
+extern doublylinkedlist_t	*g_list_send_stream;
 
 /* Data queues */
 extern queue_t			*g_queue_mission; // Queue for data to mission task (commands, victims)
