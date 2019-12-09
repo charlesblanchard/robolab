@@ -50,6 +50,8 @@ void task_report(void)
 				// Save victim ID
 				strncpy(victim.id, g_tp_refine_report.victim_id, 11);
 
+				stat_victim_precision(g_stat, victim);
+
 				// Redirect victim data to mission
 				g_tp_report_mission.victim = victim;
 				// Set event

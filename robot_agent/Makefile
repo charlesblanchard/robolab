@@ -29,7 +29,7 @@ OBJDIR_BIN = obj/bin
 DEP_BIN = 
 OUT_BIN = bin/robot_agent
 
-OBJ_BIN = $(OBJDIR_BIN)/src/queue.o $(OBJDIR_BIN)/src/rfid.o $(OBJDIR_BIN)/src/robot.o $(OBJDIR_BIN)/src/scheduler.o $(OBJDIR_BIN)/src/serialport.o $(OBJDIR_BIN)/src/task.o $(OBJDIR_BIN)/src/protocol.o $(OBJDIR_BIN)/src/tasks/task_avoid.o $(OBJDIR_BIN)/src/tasks/task_communicate.o $(OBJDIR_BIN)/src/tasks/task_control.o $(OBJDIR_BIN)/src/tasks/task_mission.o $(OBJDIR_BIN)/src/tasks/task_navigate.o $(OBJDIR_BIN)/src/tasks/task_refine.o $(OBJDIR_BIN)/src/tasks/task_report.o $(OBJDIR_BIN)/src/timelib.o $(OBJDIR_BIN)/src/udp.o $(OBJDIR_BIN)/src/enviroment.o $(OBJDIR_BIN)/lib/iniparser/iniparser.o $(OBJDIR_BIN)/main.o $(OBJDIR_BIN)/src/config.o $(OBJDIR_BIN)/src/debug.o $(OBJDIR_BIN)/src/doublylinkedlist.o $(OBJDIR_BIN)/lib/iniparser/dictionary.o $(OBJDIR_BIN)/src/file.o $(OBJDIR_BIN)/src/general.o $(OBJDIR_BIN)/src/openinterface.o $(OBJDIR_BIN)/src/pf.o $(OBJDIR_BIN)/src/pheromone.o
+OBJ_BIN = $(OBJDIR_BIN)/src/queue.o $(OBJDIR_BIN)/src/rfid.o $(OBJDIR_BIN)/src/robot.o $(OBJDIR_BIN)/src/scheduler.o $(OBJDIR_BIN)/src/serialport.o $(OBJDIR_BIN)/src/task.o $(OBJDIR_BIN)/src/protocol.o $(OBJDIR_BIN)/src/tasks/task_avoid.o $(OBJDIR_BIN)/src/tasks/task_communicate.o $(OBJDIR_BIN)/src/tasks/task_control.o $(OBJDIR_BIN)/src/tasks/task_mission.o $(OBJDIR_BIN)/src/tasks/task_navigate.o $(OBJDIR_BIN)/src/tasks/task_refine.o $(OBJDIR_BIN)/src/tasks/task_report.o $(OBJDIR_BIN)/src/timelib.o $(OBJDIR_BIN)/src/udp.o $(OBJDIR_BIN)/src/enviroment.o $(OBJDIR_BIN)/lib/iniparser/iniparser.o $(OBJDIR_BIN)/main.o $(OBJDIR_BIN)/src/config.o $(OBJDIR_BIN)/src/debug.o $(OBJDIR_BIN)/src/doublylinkedlist.o $(OBJDIR_BIN)/lib/iniparser/dictionary.o $(OBJDIR_BIN)/src/file.o $(OBJDIR_BIN)/src/general.o $(OBJDIR_BIN)/src/openinterface.o $(OBJDIR_BIN)/src/pf.o $(OBJDIR_BIN)/src/pheromone.o $(OBJDIR_BIN)/src/stat.o
 
 all: bin
 
@@ -132,6 +132,9 @@ $(OBJDIR_BIN)/src/pf.o: src/pf.c
 
 $(OBJDIR_BIN)/src/pheromone.o: src/pheromone.c
 	$(CC) $(CFLAGS_BIN) $(INC_BIN) -c src/pheromone.c -o $(OBJDIR_BIN)/src/pheromone.o
+
+$(OBJDIR_BIN)/src/stat.o: src/stat.c
+	$(CC) $(CFLAGS_BIN) $(INC_BIN) -c src/stat.c -o $(OBJDIR_BIN)/src/stat.o
 
 clean_bin: 
 	rm -f $(OBJ_BIN) $(OUT_BIN)

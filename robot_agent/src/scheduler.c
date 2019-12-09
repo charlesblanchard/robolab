@@ -25,9 +25,6 @@
 #define MAJOR_CYCLE 1000
 
 /* -- Global -- */
-
-static unsigned int counter = 0; 
-unsigned int overruns_counter[8];
 	
 /* -- Functions -- */
 
@@ -42,10 +39,9 @@ scheduler_t *scheduler_init(void)
 	scheduler_t *ces = (scheduler_t *) malloc(sizeof(scheduler_t));
 	
 	/* --- Set minor cycle period --- */
-	ces->minor = 100;
+	ces->minor = 125;
 	
-	for(int i=0; i<9; i++)
-		overruns_counter[i] = 0;
+	init_stat(g_stat);
 		
 	return ces;
 }
@@ -89,7 +85,6 @@ void scheduler_wait_for_timer(scheduler_t *ces)
 	timelib_timer_add_ms(&ces->tv_cycle, ces->minor);
 
 	// Check for overrun and execute sleep only if there is no
-	//printf("sleeptime %i\n",sleep_time);
 	if(sleep_time > 0)
 	{
 		// Go to sleep (multipy with 1000 to get miliseconds)
@@ -160,29 +155,21 @@ void scheduler_exec_task(scheduler_t *ces, int task_id)
 void scheduler_run_task(scheduler_t *ces, int task_id, struct timeval *timer)
 {
 	#ifdef LENGTH_MONITORING
-	double before,after;
-	
-	before = timelib_timer_get(ces->tv_started);
-	scheduler_exec_task(ces, task_id);
-	after = timelib_timer_get(ces->tv_started);
-	
-	if(task_id==s_TASK_REFINE_ID)
-		printf("REFINE %i %f\n",task_id, after-before);
-	
-	//if(task_id==s_TASK_AVOID_ID)
-	//	printf("AVOID %i %f\n",task_id, after-before);
+		double before,after;
 		
+		before = timelib_timer_get(ces->tv_started);
+		scheduler_exec_task(ces, task_id);
+		after = timelib_timer_get(ces->tv_started);
+		
+		if(task_id==s_TASK_REFINE_ID)
+			printf("REFINE %i %f\n",task_id, after-before);
 	#else
-	//printf("Task : %d\n",task_id);
-	scheduler_exec_task(ces, task_id);
-	
-	
+		scheduler_exec_task(ces, task_id);
 	#endif
 	
 	if(timelib_timer_get(*timer) > ces->minor )
 	{
-		overruns_counter[task_id]++;
-		printf("\noverruns %i\n",task_id);
+		stat_overruns_add(g_stat,task_id);
 	}
 }	
 
@@ -201,24 +188,29 @@ void scheduler_run(scheduler_t *ces)
 
 	unsigned int ts = (unsigned int) (timelib_unix_timestamp()*1000) ; // Get UNIX timestamp in microseconds
 
-	int sleep = 100000 - (ts % 100000);
+	int sleep = 1000000 - (ts % 1000000);
 
 	usleep(sleep);
 
 	/* LAB 2: SERVER SYNCHRONISATION END */
 
 	scheduler_start(ces);
+
 	while(1)
 	{		
 		for(int i=0; i<nb_minor_cycle; i++){
 			timelib_timer_set(&minor_cycle_start);
 			
-			if(i==0)
+			// g_config.robot_id ?
+			if(i == g_config.robot_id)
+			{
 				scheduler_run_task(ces, s_TASK_COMMUNICATE_ID, &minor_cycle_start);
-			
+			}
+
 			scheduler_run_task(ces, s_TASK_MISSION_ID, &minor_cycle_start);			
 			
-			if(i%5 == 0){
+			if(i%4 == 0)
+			{
 				scheduler_run_task(ces, s_TASK_NAVIGATE_ID, &minor_cycle_start);
 				scheduler_run_task(ces, s_TASK_CONTROL_ID, &minor_cycle_start);
 			}
