@@ -34,7 +34,7 @@ void task_mission(void)
 		go_ahead_time = (int)timelib_timer_get(g_task_mission_data.go_ahead_timer);
 		if(go_ahead_time > s_CONFIG_GO_AHEAD_TIME)
 		{
-			//g_go_ahead = 0;
+			g_go_ahead = 0;
 		}
 
 		// -- Process all data in the queue --
@@ -99,12 +99,14 @@ void task_mission(void)
 					g_task_report.enabled 			= s_TRUE;
 					g_task_communicate.enabled 		= s_TRUE;
 					g_task_avoid.enabled 			= s_TRUE;
-
+					
                     debug_printf("cmd start\n");
 
 					break;
 				// Stop tasks
 				case s_CMD_STOP :
+					printf("Time elasped since stop received: %f ms.\n",timelib_timer_get(g_stat.stop_event) );
+					print_stat(&g_stat);
 					g_task_mission.enabled 			= s_TRUE;
 					g_task_navigate.enabled 		= s_FALSE;
 					g_task_control.enabled 			= s_FALSE;
@@ -112,7 +114,7 @@ void task_mission(void)
 					g_task_refine.enabled 			= s_FALSE;
 					g_task_report.enabled 			= s_FALSE;
 					g_task_communicate.enabled 		= s_TRUE;
-
+					
 					debug_printf("cmd stop\n");
 
 					// Get full control over robot
@@ -189,7 +191,7 @@ void task_mission(void)
 			}
 
 			// Place data in a list
-			doublylinkedlist_insert_end(g_list_send, &stream, s_DATA_STRUCT_TYPE_STREAM);
+			doublylinkedlist_insert_end(g_list_send_stream, &stream, s_DATA_STRUCT_TYPE_STREAM);
 			// Increment stream packet counter
 			g_task_mission_data.stream_counter++;
 		}

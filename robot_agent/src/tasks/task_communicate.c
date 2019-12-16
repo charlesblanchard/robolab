@@ -18,7 +18,7 @@
  * Communication (receive and send data)
  */
 void task_communicate(void)
-{
+{	
 	// Check if task is enabled
 	if(g_task_communicate.enabled == s_TRUE)
 	{
@@ -43,43 +43,91 @@ void task_communicate(void)
 		//	LAB 2 starts here
 		// --------------------------------------------------
 
-
-		/* --- Send Data --- */
-		while(g_list_send->count != 0)
+		int nb_stream_to_send = 43; //experimental value
+		
+		int save_count_pheromone;
+		
+		/* --- Send Victims --- */
+		while(g_list_send_victim->count != 0)
 		{
+			nb_stream_to_send--;
+			g_stat.nb_msg_sent[0]++;
+
 			seq++;
-
-			// Allocate memory for data structure
-			switch(g_list_send->first->data_type)
-			{
-			// Robot pose
-			case s_DATA_STRUCT_TYPE_ROBOT :
-				data = (void *)malloc(sizeof(robot_t));
-				break;
-			// Victim information
-			case s_DATA_STRUCT_TYPE_VICTIM :
-				data = (void *)malloc(sizeof(victim_t));
-				break;
-			// Pheromone map
-			case s_DATA_STRUCT_TYPE_PHEROMONE :
-				data = (void *)malloc(sizeof(pheromone_map_sector_t));
-				break;
-			// Command (for future use)
-			case s_DATA_STRUCT_TYPE_CMD :
-				data = (void *)malloc(sizeof(command_t));
-				break;
-			case s_DATA_STRUCT_TYPE_STREAM :
-				data = (void *)malloc(sizeof(stream_t));
-				break;
-			// Other
-			default :
-				// Do nothing
-				continue;
-				break;
-			}
-
+			data = (void *)malloc(sizeof(victim_t));
+			
 			// Get data from the list
-			doublylinkedlist_remove(g_list_send, g_list_send->first ,data, &data_type);
+			doublylinkedlist_remove(g_list_send_victim, g_list_send_victim->first ,data, &data_type);
+			
+			//printf("Time elasped since victim detection: %f ms.\n",timelib_timer_get(g_stat.victim_event) );
+			
+			// Encode data into UDP packet
+			protocol_encode(udp_packet,
+					&udp_packet_len,
+					s_PROTOCOL_ADDR_BROADCAST,
+					g_config.robot_id,
+					g_config.robot_team,
+					s_PROTOCOL_TYPE_DATA,
+					seq,
+					g_message_sequence_id,
+					last_id,
+					data_type,
+					data);
+
+			// Broadcast packet
+			udp_broadcast(g_udps, udp_packet, udp_packet_len);
+
+			// Free memory
+			free(data);
+		}
+		
+		/* --- Send Location --- */
+		while(g_list_send_location->count != 0 && nb_stream_to_send > 0)
+		{
+			nb_stream_to_send--;
+			g_stat.nb_msg_sent[1]++;
+			
+			seq++;
+			data = (void *)malloc(sizeof(robot_t));
+			
+			// Get data from the list
+			doublylinkedlist_remove(g_list_send_location, g_list_send_location->first ,data, &data_type);
+
+			// Encode data into UDP packet
+			protocol_encode(udp_packet,
+					&udp_packet_len,
+					s_PROTOCOL_ADDR_BROADCAST,
+					g_config.robot_id,
+					g_config.robot_team,
+					s_PROTOCOL_TYPE_DATA,
+					seq,
+					g_message_sequence_id,
+					last_id,
+					data_type,
+					data);
+
+			// Broadcast packet
+			udp_broadcast(g_udps, udp_packet, udp_packet_len);
+
+			// Free memory
+			free(data);
+
+			doublylinkedlist_empty(g_list_send_location);
+		}
+		
+		/* --- Send Pheromones --- */
+		save_count_pheromone = g_list_send_pheromone->count - 8;
+		while(g_list_send_pheromone->count != 0 && g_list_send_pheromone->count != save_count_pheromone && nb_stream_to_send >0)
+		{	
+			nb_stream_to_send-=4;
+			
+			g_stat.nb_msg_sent[2]++;
+			
+			seq++;
+			data = (void *)malloc(sizeof(pheromone_map_sector_t));
+			
+			// Get data from the list
+			doublylinkedlist_remove(g_list_send_pheromone, g_list_send_pheromone->first ,data, &data_type);
 
 			// Encode data into UDP packet
 			protocol_encode(udp_packet,
@@ -100,9 +148,43 @@ void task_communicate(void)
 			// Free memory
 			free(data);
 		}
+		doublylinkedlist_empty(g_list_send_pheromone);
+		
+		/* --- Send Stream --- */
+		while(g_list_send_stream->count != 0 && nb_stream_to_send > 0)
+		{
+			nb_stream_to_send--;
+			
+			g_stat.nb_msg_sent[3]++;
+			
+			seq++;
+			data = (void *)malloc(sizeof(stream_t));
+			
+			// Get data from the list
+			doublylinkedlist_remove(g_list_send_stream, g_list_send_stream->first ,data, &data_type);
 
+			// Encode data into UDP packet
+			protocol_encode(udp_packet,
+					&udp_packet_len,
+					s_PROTOCOL_ADDR_BROADCAST,
+					g_config.robot_id,
+					g_config.robot_team,
+					s_PROTOCOL_TYPE_DATA,
+					seq,
+					g_message_sequence_id,
+					last_id,
+					data_type,
+					data);
 
+			// Broadcast packet
+			udp_broadcast(g_udps, udp_packet, udp_packet_len);
 
+			// Free memory
+			free(data);
+		}
+		
+		//doublylinkedlist_empty(g_list_send_stream);
+		
 		/* --- Receive Data --- */
 		// Receive packets, decode and forward to proper process
 
@@ -129,6 +211,9 @@ void task_communicate(void)
 					go_ahead.cmd = s_CMD_GO_AHEAD;
 					// Redirect to mission by adding it to the queue
 					queue_enqueue(g_queue_mission, &go_ahead, s_DATA_STRUCT_TYPE_CMD);
+
+					//count the number of go ahead
+					stat_go_ahead_reception_add(&g_stat);
 
 					// Debuging stuff
 					debug_printf("GO_AHEAD RECEIVED for robot %d team %d\n",packet.recv_id,packet.send_team);
@@ -167,6 +252,13 @@ void task_communicate(void)
 					case s_DATA_STRUCT_TYPE_CMD :
 						debug_printf("received CMD\n");
 						// Redirect to mission by adding it to the queue
+						
+						if ((((command_t *)(packet.data))->cmd) == s_CMD_STOP)
+						{
+							// stop command received
+							timelib_timer_reset(&(g_stat.stop_event));
+						}
+						
 						queue_enqueue(g_queue_mission, packet.data, s_DATA_STRUCT_TYPE_CMD);
 						break;
 					case s_DATA_STRUCT_TYPE_STREAM :
@@ -189,7 +281,7 @@ void task_communicate(void)
 			}
 		}
 
-		// Increase msg sequance id
+		// Increase msg sequence id
 		g_message_sequence_id++;
 	}
 }

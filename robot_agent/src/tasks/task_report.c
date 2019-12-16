@@ -50,13 +50,15 @@ void task_report(void)
 				// Save victim ID
 				strncpy(victim.id, g_tp_refine_report.victim_id, 11);
 
+				stat_victim_precision(&g_stat, victim);
+
 				// Redirect victim data to mission
 				g_tp_report_mission.victim = victim;
 				// Set event
 				g_tp_report_mission.event = s_TASK_EVENT_SET;
 
 				// Send victim data (add data to communication queue)
-				doublylinkedlist_insert_beginning(g_list_send, &victim, s_DATA_STRUCT_TYPE_VICTIM);
+				doublylinkedlist_insert_end(g_list_send_victim, &victim, s_DATA_STRUCT_TYPE_VICTIM);
 			}
 
 			// Reset event

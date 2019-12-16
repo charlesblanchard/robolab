@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
+
 /* project libraries */
 #include "config.h"
 #include "def.h"
@@ -33,6 +35,9 @@
 #include "timelib.h"
 #include "doublylinkedlist.h"
 #include "debug.h"
+
+
+#include "stat.h"
 
 /* -- Enumurations -- */
 
@@ -125,6 +130,7 @@ typedef struct s_TASKPIPE_NAVIGATE_CONTROL_STRUCT
 /* -- Exported Variables -- */
 
 /* -- Global Variables -- */
+extern stat_t 			g_stat;
 
 /* System structures */
 extern enviroment_t		*g_envs; // Enviroment definition
@@ -137,6 +143,10 @@ extern udp_t			*g_udps; // UDP sockets connection
 
 /* Data lists */
 extern doublylinkedlist_t	*g_list_send; // Queue for data to be sent away (communication)
+extern doublylinkedlist_t	*g_list_send_victim; 
+extern doublylinkedlist_t	*g_list_send_location; 
+extern doublylinkedlist_t	*g_list_send_pheromone; 
+extern doublylinkedlist_t	*g_list_send_stream;
 
 /* Data queues */
 extern queue_t			*g_queue_mission; // Queue for data to mission task (commands, victims)

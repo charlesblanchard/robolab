@@ -37,12 +37,15 @@ int main()
 	// Initialization
 	// Load Configuration
 	config_load();
+
 	// Init tasks
 	task_init(1);
+
 	// Init scheduler (Set minor and mayor cycle)
 	scheduler_t *ces = scheduler_init();
 
 	// Run scheduler
+
 	scheduler_run(ces);
 
 	// Before end application deinitialize and free memory
