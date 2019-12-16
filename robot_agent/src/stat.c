@@ -1,33 +1,52 @@
 #include "task.h"
 
-#include <stdio.h>
-#include <math.h>
+stat_t g_stat;
 
-stat_t *g_stat;
-
-#define PRINT_DEBUG
 
 void init_stat(stat_t *s)
-{
+{	
 	s->nb_overruns = 0;
 
-	for(int i=0; i<9; i++)
+	for(int i=0; i<8; i++)
 		s->task_nb_overruns[i] = 0;
-
+		
 	s->nb_victim_found = 0;
 	s->total_distance = 0.0;
+	
+	s->go_ahead_reception = 0;
+	s->go_ahead_flag = 0;
+	s->executed_major_cycle = 0;
+	
+	for(int i=0; i<4; i++)
+		s->nb_msg_sent[i] = 0;
 }
 
 
 void stat_overruns_add(stat_t *s, int task_id){
-	s->task_nb_overruns[task_id] = s->task_nb_overruns[task_id] + 1;
-	s->nb_overruns = s->nb_overruns + 1;
+	s->task_nb_overruns[task_id]++;
+	s->nb_overruns++;
 
-	#ifdef PRINT_DEBUG
 	printf("Overruns %i\n",task_id);
-	#endif
 }
-		
+
+void stat_go_ahead_reception_add(stat_t *s){
+	s->go_ahead_flag ++;
+}
+
+void stat_executed_major_cycle_add(stat_t *s){
+	if(s->go_ahead_flag != 0)
+	{
+		s->go_ahead_reception ++;
+		s->go_ahead_flag = 0;
+	}
+	s->executed_major_cycle ++;
+}
+
+double stat_get_go_ahead_miss(stat_t s)
+{
+	return ((double)(s.executed_major_cycle - s.go_ahead_reception)/(double)s.executed_major_cycle)*100;
+}
+
 static const victim_t THEORICAL[24] = 
 {
 	{ 340,	340, 	"020058F5BD\0" },
@@ -69,7 +88,7 @@ void stat_victim_precision(stat_t *s, victim_t found)
 	if(i==24)
 	{
 		//not found chelou
-		printf("ERROR: Victim not found in the list\n");
+		printf("ERROR: Victim not found in the list %s\n", found.id );
 		return;
 	}
 
@@ -79,12 +98,28 @@ void stat_victim_precision(stat_t *s, victim_t found)
 
 	s->total_distance += distance;
 
-	#ifdef PRINT_DEBUG
 	printf("Euclidian distance between found victim and theo position: %f\n",distance);
-	#endif
 }
 
 double stat_victim_average(stat_t *s)
 {
 	return s->total_distance / s->nb_victim_found;
+}
+
+
+void print_stat(stat_t *s){
+	
+	printf("Nb overruns : %d\nNb victim found : %d\nRatio go ahead missed : %f\n",s->nb_overruns, s->nb_victim_found, stat_get_go_ahead_miss(*s));
+	/*
+	for(int i=0; i<8; i++){
+		printf("%d ",s->task_nb_overruns[i]);
+	}
+	*/
+	
+	printf("\nNb msg sent :");
+	for(int i=0; i<4; i++){
+		printf(" %d",s->nb_msg_sent[i]);
+		s->nb_msg_sent[i] = 0;
+	}
+	printf("\n\n");
 }

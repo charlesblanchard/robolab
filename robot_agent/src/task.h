@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
+
 /* project libraries */
 #include "config.h"
 #include "def.h"
@@ -33,6 +35,7 @@
 #include "timelib.h"
 #include "doublylinkedlist.h"
 #include "debug.h"
+
 
 #include "stat.h"
 
@@ -127,7 +130,7 @@ typedef struct s_TASKPIPE_NAVIGATE_CONTROL_STRUCT
 /* -- Exported Variables -- */
 
 /* -- Global Variables -- */
-extern stat_t 			*g_stat;
+extern stat_t 			g_stat;
 
 /* System structures */
 extern enviroment_t		*g_envs; // Enviroment definition

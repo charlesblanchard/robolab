@@ -25,7 +25,7 @@
 #define MAJOR_CYCLE 1000
 
 /* -- Global -- */
-	
+
 /* -- Functions -- */
 
 /**
@@ -41,8 +41,8 @@ scheduler_t *scheduler_init(void)
 	/* --- Set minor cycle period --- */
 	ces->minor = 125;
 	
-	init_stat(g_stat);
-		
+	init_stat(&g_stat);
+	
 	return ces;
 }
 
@@ -169,7 +169,7 @@ void scheduler_run_task(scheduler_t *ces, int task_id, struct timeval *timer)
 	
 	if(timelib_timer_get(*timer) > ces->minor )
 	{
-		stat_overruns_add(g_stat,task_id);
+		stat_overruns_add(&g_stat,task_id);
 	}
 }	
 
@@ -185,24 +185,21 @@ void scheduler_run(scheduler_t *ces)
 	int nb_minor_cycle = MAJOR_CYCLE/ces->minor;
 	
 	/* LAB 2: SERVER SYNCHRONISATION BEGIN */
-
-	unsigned int ts = (unsigned int) (timelib_unix_timestamp()*1000) ; // Get UNIX timestamp in microseconds
-
-	int sleep = 1000000 - (ts % 1000000);
-
-	usleep(sleep);
-
-	/* LAB 2: SERVER SYNCHRONISATION END */
-
+	
+	double unix_time = timelib_unix_timestamp()/1000;
+    double sleep_time = (int)((ceil(unix_time)-unix_time)*1000000);
+    usleep(sleep_time);
+    
+    /* LAB 2: SERVER SYNCHRONISATION END */
+	
 	scheduler_start(ces);
 
 	while(1)
-	{		
+	{	
 		for(int i=0; i<nb_minor_cycle; i++){
 			timelib_timer_set(&minor_cycle_start);
 			
-			// g_config.robot_id ?
-			if(i == g_config.robot_id)
+			if(i == g_config.robot_id - 1)
 			{
 				scheduler_run_task(ces, s_TASK_COMMUNICATE_ID, &minor_cycle_start);
 			}
@@ -221,5 +218,8 @@ void scheduler_run(scheduler_t *ces)
 			
 			scheduler_wait_for_timer(ces);
 		}
+		stat_executed_major_cycle_add(&g_stat);
+		
+		print_stat(&g_stat);
 	}
 }
